@@ -13,7 +13,6 @@ export default async function handler(req, res) {
       ? image.split('base64,')[1] 
       : image;
 
-    // 获取百度 Access Token
     const tokenUrl = `https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${process.env.BAIDU_API_KEY}&client_secret=${process.env.BAIDU_SECRET_KEY}`;
     
     const tokenResponse = await fetch(tokenUrl, { method: 'POST' });
@@ -23,7 +22,6 @@ export default async function handler(req, res) {
       throw new Error('获取百度Access Token失败');
     }
 
-    // 调用百度古文识别
     const ocrUrl = `https://aip.baidubce.com/rest/2.0/ocr/v1/accurate?access_token=${tokenData.access_token}`;
     
     const params = new URLSearchParams();
@@ -60,29 +58,38 @@ export default async function handler(req, res) {
 
       const processingTime = Date.now() - startTime;
 
-      res.status(200).json({ 
+      return new Response(JSON.stringify({ 
         text,
         confidence: avgConfidence,
         processingTime,
         wordCount: sortedResults.length,
         engine: '百度古文OCR'
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
       });
     } else {
-      res.status(200).json({ 
+      return new Response(JSON.stringify({ 
         text: '未识别到文字',
         confidence: 0,
         processingTime: Date.now() - startTime,
         wordCount: 0,
         engine: '百度古文OCR'
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
       });
     }
 
   } catch (error) {
     console.error('Baidu OCR Error:', error);
-    res.status(500).json({ 
+    return new Response(JSON.stringify({ 
       error: error.message,
       processingTime: Date.now() - startTime,
       engine: '百度古文OCR'
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
     });
   }
 }
