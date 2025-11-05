@@ -2,17 +2,22 @@ export const runtime = 'edge';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   try {
-    const { source, target } = req.body;
+    const { source, target } = await req.json();
 
     if (!source || !target) {
-      return res.status(400).json({ error: '缺少比对文本' });
+      return new Response(JSON.stringify({ error: '缺少比对文本' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
-    // 使用智谱AI
     const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
       method: 'POST',
       headers: {
@@ -71,16 +76,22 @@ ${target}
       };
     }
 
-    res.status(200).json({ result });
+    return new Response(JSON.stringify({ result }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
 
   } catch (error) {
-    res.status(500).json({ 
+    return new Response(JSON.stringify({ 
       error: error.message,
       result: {
         differences: [],
         punctuation: [],
         suggestions: [`分析出错: ${error.message}`]
       }
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
     });
   }
 }
