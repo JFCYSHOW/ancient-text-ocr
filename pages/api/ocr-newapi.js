@@ -11,15 +11,15 @@ export default async function handler(req, res) {
       ? image.split('base64,')[1] 
       : image;
 
-    // 使用NewAPI的视觉模型
-    const response = await fetch(`${process.env.NEWAPI_BASE_URL}/v1/chat/completions`, {
+    // 使用智谱AI（免费）
+    const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.NEWAPI_KEY}`
+        'Authorization': `Bearer ${process.env.ZHIPU_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini', // 或 gpt-4o / claude-3-sonnet
+        model: 'glm-4v',
         messages: [{
           role: 'user',
           content: [
@@ -31,17 +31,15 @@ export default async function handler(req, res) {
             },
             {
               type: 'text',
-              text: '这是一张清代古籍的图片。请专业地识别其中的所有文字：\n\n1. 这是竖排文字，请按照从右到左、从上到下的传统阅读顺序识别\n2. 保留所有繁体字、异体字的原貌\n3. 识别所有文字，包括正文、注释、批注\n4. 不要添加标点符号，保持原文格式\n5. 如果有特殊符号或印章，请用[]标注说明\n6. 只输出识别的文字内容，不要有任何额外解释或前言'
+              text: '这是一张清代古籍的图片。请专业地识别其中的所有文字：\n\n1. 这是竖排文字，请按照从右到左、从上到下的传统阅读顺序识别\n2. 保留所有繁体字、异体字的原貌\n3. 识别所有文字，包括正文、注释、批注\n4. 不要添加标点符号，保持原文格式\n5. 如果有特殊符号或印章，请用[]标注说明\n6. 只输出识别的文字内容，不要有任何额外解释'
             }
           ]
-        }],
-        max_tokens: 3000,
-        temperature: 0.2
+        }]
       })
     });
 
     if (!response.ok) {
-      throw new Error(`NewAPI请求失败: ${response.status}`);
+      throw new Error(`智谱AI请求失败: ${response.status}`);
     }
 
     const data = await response.json();
@@ -52,18 +50,18 @@ export default async function handler(req, res) {
 
     res.status(200).json({ 
       text,
-      confidence: 0.85, // NewAPI不返回置信度，给个估计值
+      confidence: 0.82,
       processingTime,
       wordCount,
-      engine: 'NewAPI (GPT-4 Vision)'
+      engine: '智谱AI (GLM-4V)'
     });
 
   } catch (error) {
-    console.error('NewAPI OCR Error:', error);
+    console.error('智谱AI OCR Error:', error);
     res.status(500).json({ 
       error: error.message,
       processingTime: Date.now() - startTime,
-      engine: 'NewAPI'
+      engine: '智谱AI'
     });
   }
 }
