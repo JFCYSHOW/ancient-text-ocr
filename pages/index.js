@@ -103,31 +103,32 @@ export default function Home() {
     setIsProcessing(false);
   };
 
-  const searchLiterature = () => {
-    if (!searchQuery) return;
-    setIsProcessing(true);
+  const searchLiterature = async () => {
+  if (!searchQuery) {
+    alert('请输入搜索内容');
+    return;
+  }
+  
+  setIsProcessing(true);
+  setSearchResults([]);
+  
+  try {
+    const response = await fetch('/api/search-literature', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: searchQuery })
+    });
     
-    setTimeout(() => {
-      setSearchResults([
-        {
-          title: '清史稿',
-          chapter: '卷一百二十',
-          confidence: '95%',
-          preview: `${searchQuery}...諸侯歸於朝廷...`,
-          source: '中国哲学书电子化计划'
-        },
-        {
-          title: '清实录',
-          chapter: '康熙朝实录',
-          confidence: '87%',
-          preview: `...前文所述${searchQuery}...`,
-          source: '国学大师'
-        }
-      ]);
-      setIsProcessing(false);
-    }, 1000);
-  };
+    const data = await response.json();
+    setSearchResults(data.results || []);
+  } catch (error) {
+    alert('搜索失败：' + error.message);
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
+  
   const compareTexts = async () => {
     if (!recognizedText || !compareText) {
       alert('请先识别图片并输入待校对文本');
