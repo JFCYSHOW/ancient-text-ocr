@@ -2,18 +2,20 @@ export const runtime = 'edge';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   const startTime = Date.now();
 
   try {
-    const { image } = req.body;
+    const { image } = await req.json();
     const base64Data = image.includes('base64,') 
       ? image.split('base64,')[1] 
       : image;
 
-    // 使用智谱AI（免费）
     const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
       method: 'POST',
       headers: {
@@ -50,20 +52,26 @@ export default async function handler(req, res) {
     const processingTime = Date.now() - startTime;
     const wordCount = text.replace(/\s/g, '').length;
 
-    res.status(200).json({ 
+    return new Response(JSON.stringify({ 
       text,
       confidence: 0.82,
       processingTime,
       wordCount,
       engine: '智谱AI (GLM-4V)'
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
     console.error('智谱AI OCR Error:', error);
-    res.status(500).json({ 
+    return new Response(JSON.stringify({ 
       error: error.message,
       processingTime: Date.now() - startTime,
       engine: '智谱AI'
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
     });
   }
 }
