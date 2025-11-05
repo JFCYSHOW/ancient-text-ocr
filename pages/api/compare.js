@@ -10,14 +10,15 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: '缺少比对文本' });
     }
 
-    const response = await fetch(`${process.env.NEWAPI_BASE_URL}/v1/chat/completions`, {
+    // 使用智谱AI
+    const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.NEWAPI_KEY}`
+        'Authorization': `Bearer ${process.env.ZHIPU_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'glm-4',
         messages: [{
           role: 'user',
           content: `你是一位专业的古籍研究专家。请仔细比对以下两段清代古籍文本的差异：
@@ -34,21 +35,17 @@ ${target}
 3. 繁简体、异体字使用情况
 4. 给出专业的修改建议
 
-请严格按照以下JSON格式输出，不要包含任何其他内容：
+请严格按照以下JSON格式输出：
 {
   "differences": [
     {"type": "错字", "original": "原文字", "current": "现文字", "position": "位置说明"}
   ],
   "punctuation": [
-    {"issue": "标点问题的详细说明"}
+    {"issue": "标点问题说明"}
   ],
-  "suggestions": [
-    "修改建议1",
-    "修改建议2"
-  ]
+  "suggestions": ["建议1", "建议2"]
 }`
         }],
-        max_tokens: 3000,
         temperature: 0.3
       })
     });
@@ -62,24 +59,19 @@ ${target}
       if (jsonMatch) {
         result = JSON.parse(jsonMatch[0]);
       } else {
-        throw new Error('未找到有效的JSON格式');
+        throw new Error('未找到有效JSON');
       }
-    } catch (parseError) {
+    } catch {
       result = {
-        differences: [{type: '分析结果', original: '', current: '', position: content}],
+        differences: [{type: '分析', original: '', current: '', position: content}],
         punctuation: [],
-        suggestions: ['请查看上方的详细分析']
+        suggestions: []
       };
     }
-
-    if (!result.differences) result.differences = [];
-    if (!result.punctuation) result.punctuation = [];
-    if (!result.suggestions) result.suggestions = [];
 
     res.status(200).json({ result });
 
   } catch (error) {
-    console.error('Compare Error:', error);
     res.status(500).json({ 
       error: error.message,
       result: {
